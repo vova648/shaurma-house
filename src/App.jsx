@@ -6,24 +6,30 @@ const categories = [
     title: 'ШАУРМА',
     subtitle: 'НАШИ ФИРМЕННЫЕ ВКУСЫ',
     products: [
-      {
+  {
   name: 'Классическая',
-  description: 'Сочная курица, свежие овощи, фирменный соус',
+  description: 'Сочная курица, хрустящие овощи и фирменный соус в тонком лаваше. Классика, которая всегда попадает в точку',
+  ingredients: 'Курица, свежие овощи, лаваш, фирменный соус',
   price: 350,
+    weight: '500 г',
   image: '/images/shawarma1.png',
   badge: 'ХИТ ПРОДАЖ',
 },
       {
         name: 'Сырная',
-        description: 'Курица, много сыра, овощи и сырный соус',
+        ingredients: 'Курица, много сыра, овощи и сырный соус',
+        description: 'Нежная курица, тянущийся сыр и сочные овощи создают насыщенный сливочный вкус. Настоящее удовольствие для любителей сыра',
         price: 420,
+        weight: '500 г',
         image: '/images/shawarma2.png',
         badge: 'ПОПУЛЯРНОЕ',
       },
       {
         name: 'Острая',
-        description: 'Мясо, овощи, пикантный острый соус',
+        ingredients: 'Мясо, овощи, пикантный острый соус',
+        description: 'Сочная курица, пикантный соус и яркие специи. С каждым кусочком становится всё интереснее',
         price: 390,
+        weight: '500 г',
         image: '/images/shawarma3.png',
       },
     ],
@@ -34,15 +40,19 @@ const categories = [
     products: [
       {
         name: 'Картофель фри',
-        description: 'Золотистая картошка с солью',
+        ingredients: 'Золотистая картошка с солью',
+        description: 'Золотистая корочка снаружи и мягкая картошка внутри. Идеальный хрустящий перекус',
         price: 150,
-        image: '/images/fries.jpg',
+        weight: '250 г',
+        image: '/images/fries1.jpg',
       },
       {
         name: 'Фри с соусом',
-        description: 'Хрустящий картофель с фирменным соусом',
+        ingredients: 'Хрустящий картофель с фирменным соусом',
+        description: 'Румяный картофель фри и насыщенный соус — простое сочетание, которое хочется повторить',
         price: 190,
-        image: '/images/fries.jpg',
+        weight: '300 г',
+        image: '/images/fries2.jpg',
       },
     ],
   },
@@ -52,29 +62,74 @@ const categories = [
     products: [
       {
         name: 'Кола',
-        description: 'Холодный газированный напиток',
+        ingredients: 'Холодный газированный напиток',
+        description: 'Знакомый насыщенный вкус и освежающие пузырьки. Отлично дополняет горячую шаурму.',
         price: 120,
-        image: '/images/drinks.jpg',
+        weight: '350 мл',
+      image: '/images/cola.jpg',
       },
       {
         name: 'Фанта',
-        description: 'Яркий цитрусовый вкус',
+        ingredients: 'Яркий цитрусовый вкус',
+        description: 'Яркий цитрусовый вкус, лёгкая кислинка и настоящее настроение лета.',
         price: 120,
-        image: '/images/drinks.jpg',
+          weight: '350 мл',
+        image: '/images/fanta.jpg',
       },
       {
         name: 'Вода',
-        description: 'Чистая питьевая вода',
+        ingredients: 'Чистая питьевая вода',
+        description: 'Чистая и освежающая вода — простой способ утолить жажду.',
         price: 80,
-        image: '/images/drinks.jpg',
+          weight: '500 мл',
+        image: '/images/water.jpg',
       },
     ],
   },
 ]
 
-function App() {
+  function App() {
+  const [cart, setCart] = useState([])
+  const [showCart, setShowCart] = useState(false)
+  const [showAddedMessage, setShowAddedMessage] = useState(false)
+
+  const addToCart = (product) => {
+    setCart((prevCart) => {
+      const existingProduct = prevCart.find(
+        (item) => item.name === product.name
+      )
+
+      if (existingProduct) {
+        return prevCart.map((item) =>
+          item.name === product.name
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      }
+
+      return [...prevCart, { ...product, quantity: 1 }]
+    })
+  }
+
+  const changeQuantity = (productName, change) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) =>
+          item.name === productName
+            ? { ...item, quantity: item.quantity + change }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    )
+  }
+
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  )
   const [loading, setLoading] = useState(true)
   const [showTopButton, setShowTopButton] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,10 +147,22 @@ function App() {
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedProduct(null)
+      }
+    }
 
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
   return (
     <div className="website">
-      {loading && (
+     {loading && (
   <div className="loading-screen">
     <div className="loading-logo">
       SHAURMA<span>HOUSE</span>
@@ -114,6 +181,12 @@ function App() {
           <a href="#shawarma">ШАУРМА</a>
           <a href="#fries">ФРИ</a>
           <a href="#drinks">НАПИТКИ</a>
+          <button
+  className="header-cart"
+  onClick={() => setShowCart(true)}
+>
+  КОРЗИНА <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+</button>
         </nav>
       </header>
 
@@ -183,19 +256,35 @@ function App() {
 
               <div className="product-grid">
                 {category.products.map((product) => (
-                  <article className="product-card" key={product.name}>
-                    <div className="product-image">
-  <img src={product.image} alt={product.name} />
-  {product.badge && (
-    <span className="product-badge">{product.badge}</span>
-  )}
-</div>
+                  <article
+  className="product-card"
+  key={product.name}
+  onClick={() => setSelectedProduct(product)}
+>
+  <div className="product-image">
+    <img src={product.image} alt={product.name} />
+
+    {product.badge && (
+      <span className="product-badge">{product.badge}</span>
+    )}
+  </div>
                     <div className="product-info">
                       <h4>{product.name}</h4>
                       <p>{product.description}</p>
                       <div className="product-bottom">
-                        <strong>{product.price} ₽</strong>
-                      </div>
+  <strong>{product.price} ₽</strong>
+
+  <button
+    className="quick-add-btn"
+    onClick={(event) => {
+      event.stopPropagation()
+      addToCart(product)
+    }}
+    aria-label={`Добавить ${product.name} в корзину`}
+  >
+    +
+  </button>
+</div>
                     </div>
                   </article>
                 ))}
@@ -204,6 +293,102 @@ function App() {
           ))}
         </section>
       </main>
+      {showCart && (
+  <div className="cart-modal">
+    <div className="cart-content">
+      <button
+        className="cart-close"
+        onClick={() => setShowCart(false)}
+      >
+        ×
+      </button>
+
+      <h2>ТВОЯ КОРЗИНА</h2>
+
+      {cart.length === 0 ? (
+        <p className="empty-cart">Корзина пока пуста</p>
+      ) : (
+        <>
+          <div className="cart-items">
+            {cart.map((item) => (
+              <div className="cart-item" key={item.name}>
+                <img src={item.image} alt={item.name} />
+
+                <div className="cart-item-info">
+                  <h3>{item.name}</h3>
+                  <p>{item.price} ₽ за шт.</p>
+
+                  <div className="cart-quantity">
+                    <button onClick={() => changeQuantity(item.name, -1)}>
+                      −
+                    </button>
+
+                    <span>{item.quantity}</span>
+
+                    <button onClick={() => changeQuantity(item.name, 1)}>
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <strong>{item.price * item.quantity} ₽</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="cart-total">
+            <span>ИТОГО:</span>
+            <strong>{cartTotal} ₽</strong>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+)}
+      {selectedProduct && (
+  <div className="product-modal">
+    <button
+      className="modal-close"
+      onClick={() => setSelectedProduct(null)}
+    >
+      ×
+    </button>
+
+    <div className="modal-content">
+      <div className="modal-image">
+        <img
+          src={selectedProduct.image}
+          alt={selectedProduct.name}
+        />
+      </div>
+
+      <div className="modal-info">
+        <span className="eyebrow">SHAURMA HOUSE</span>
+
+        <h2>{selectedProduct.name}</h2>
+
+        <p>{selectedProduct.description}</p>
+       <div className="modal-ingredients">
+  <span>СОСТАВ</span>
+  <p>{selectedProduct.ingredients}</p>
+</div>
+
+<div className="modal-weight">
+  <span>ВЕС / ОБЪЁМ</span>
+  <p>{selectedProduct.weight}</p>
+</div>
+
+<strong>{selectedProduct.price} ₽</strong>
+<button
+  className="add-to-cart-btn"
+  onClick={() => addToCart(selectedProduct)}
+>
+  ДОБАВИТЬ В КОРЗИНУ
+</button>
+      </div>
+    </div>
+  </div>
+)}
 <section className="reviews">
   <span className="eyebrow">МНЕНИЕ ГОСТЕЙ</span>
   <h2>НАШИ ОТЗЫВЫ</h2>
